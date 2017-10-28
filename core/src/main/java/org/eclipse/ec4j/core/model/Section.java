@@ -17,148 +17,186 @@
 package org.eclipse.ec4j.core.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
 
-import org.eclipse.ec4j.core.EditorConfigConstants;
 import org.eclipse.ec4j.core.model.optiontypes.OptionNames;
+import org.eclipse.ec4j.core.model.optiontypes.OptionType;
+import org.eclipse.ec4j.core.model.optiontypes.OptionTypeRegistry;
 
 /**
+ * A section in an {@code .editorconfig} file.
+ *
  * @author <a href="mailto:angelo.zerr@gmail.com">Angelo Zerr</a>
  */
 public class Section {
 
-    private final EditorConfig editorConfig;
-    private String pattern;
+    public static class Builder {
+
+        private Glob glob;
+
+        private Map<String, Option> options = new LinkedHashMap<>();
+        final EditorConfig.Builder parentBuilder;
+
+        public Builder(org.eclipse.ec4j.core.model.EditorConfig.Builder parentBuilder) {
+            super();
+            this.parentBuilder = parentBuilder;
+        }
+
+        public Section build() {
+            preprocessOptions();
+            return new Section(glob, Collections.unmodifiableList(new ArrayList<Option>(options.values())));
+        }
+
+        public EditorConfig.Builder closeSection() {
+            if (glob == null) {
+                /* this is the first glob-less section */
+                Option rootOption = options.remove("root");
+                if (rootOption != null) {
+                    parentBuilder.root(rootOption.getSourceValue().equalsIgnoreCase(Boolean.TRUE.toString()));
+                }
+            } else {
+                parentBuilder.section(build());
+            }
+            return parentBuilder;
+        }
+        public Option.Builder openOption() {
+            return new Option.Builder(this);
+        }
+
+        public Builder option(Option option) {
+            this.options.put(option.getName(), option);
+            return this;
+        }
+
+        public Builder options(Collection<Option> options) {
+            for (Option option : options) {
+                this.options.put(option.getName(), option);
+            }
+            return this;
+        }
+
+        public Builder options(Option... options) {
+            for (Option option : options) {
+                this.options.put(option.getName(), option);
+            }
+            return this;
+        }
+
+        public Builder pattern(String pattern) {
+            this.glob = new Glob(parentBuilder.resourcePath.getPath(), pattern);
+            return this;
+        }
+
+        private void preprocessOptions() {
+            String version = parentBuilder.version;
+            Option indentStyle = null;
+            Option indentSize = null;
+            Option tabWidth = null;
+            for (Option option : options.values()) {
+                OptionNames name = OptionNames.get(option.getName());
+                // Lowercase option value for certain options
+                // get indent_style, indent_size, tab_width option
+                switch (name) {
+                case indent_style:
+                    indentStyle = option;
+                    break;
+                case indent_size:
+                    indentSize = option;
+                    break;
+                case tab_width:
+                    tabWidth = option;
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            // Set indent_size to "tab" if indent_size is unspecified and
+            // indent_style is set to "tab".
+            if (indentStyle != null && "tab".equals(indentStyle.getSourceValue()) && indentSize == null
+                    && RegexpUtils.compareVersions(version, "0.10.0") >= 0) {
+                final String name = OptionNames.indent_size.name();
+                final OptionType<?> type = parentBuilder.registry.getType(name);
+                final String value = "tab";
+                indentSize = new Option(type, name, value, type.parse(value), true);
+                this.option(indentSize);
+            }
+
+            // Set tab_width to indent_size if indent_size is specified and
+            // tab_width is unspecified
+            if (indentSize != null && !"tab".equals(indentSize.getSourceValue()) && tabWidth == null) {
+                final String name = OptionNames.tab_width.name();
+                final OptionType<?> type = parentBuilder.registry.getType(name);
+                final String value = indentSize.getSourceValue();
+                tabWidth = new Option(type, name, value, type.parse(value), true);
+                this.option(tabWidth);
+            }
+
+            // Set indent_size to tab_width if indent_size is "tab"
+            if (indentSize != null && "tab".equals(indentSize.getSourceValue()) && tabWidth != null) {
+                final String name = OptionNames.indent_size.name();
+                final OptionType<?> type = parentBuilder.registry.getType(name);
+                final String value = tabWidth.getSourceValue();
+                indentSize = new Option(type, name, value, type.parse(value), true);
+                this.option(indentSize);
+            }
+        }
+
+    }
+
+    private final Glob glob;
+
     private final List<Option> options;
 
-    private Pattern regex;
-    private List<int[]> ranges;
-    private Glob glob;
-
-    public Section(EditorConfig editorConfig) {
-        this.editorConfig = editorConfig;
-        this.options = new ArrayList<>();
-        this.pattern = "";
+    /**
+     * You look for {@link #builder(OptionTypeRegistry)} if you wonder why this constructor this package private.
+     * @param glob
+     * @param options
+     */
+    Section(Glob glob, List<Option> options) {
+        super();
+        this.glob = glob;
+        this.options = options;
     }
-
-    public void addOption(Option option) {
-        options.add(option);
-    }
-
-    public List<Option> getOptions() {
-        return options;
-    }
-
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-    }
-
-    public String getPattern() {
-        return pattern;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder s = new StringBuilder();
+    public void appendTo(StringBuilder s) {
         // patterns
-        if (!pattern.isEmpty()) {
-            s.append("[");
-            s.append(pattern);
+        if (!glob.isEmpty()) {
+            s.append('[');
+            s.append(glob.toString());
             s.append("]\n");
         }
         // options
         int i = 0;
-        for (Option option : this.getOptions()) {
+        for (Option option : options) {
             if (i > 0) {
                 s.append("\n");
             }
             s.append(option.toString());
             i++;
         }
-        return s.toString();
-    }
-
-    public boolean match(String filePath) {
-        return getGlob().match(filePath);
     }
 
     public Glob getGlob() {
-        if (glob == null) {
-            String configDirname = editorConfig != null ? editorConfig.getDirPath() : "/dir/";
-            glob = new Glob(configDirname, pattern);
-        }
         return glob;
     }
 
-    public void preprocessOptions() {
-        String version = editorConfig != null ? editorConfig.getVersion() : EditorConfigConstants.VERSION;
-        Option indentStyle = null;
-        Option indentSize = null;
-        Option tabWidth = null;
-        for (Option option : options) {
-            OptionNames name = OptionNames.get(option.getName());
-            // Lowercase option value for certain options
-            option.setValue(preprocessOptionValue(name, option.getValue()));
-            // get indent_style, indent_size, tab_width option
-            switch (name) {
-            case indent_style:
-                indentStyle = option;
-                break;
-            case indent_size:
-                indentSize = option;
-                break;
-            case tab_width:
-                tabWidth = option;
-                break;
-            default:
-                break;
-            }
-        }
-
-        // Set indent_size to "tab" if indent_size is unspecified and
-        // indent_style is set to "tab".
-        if (indentStyle != null && "tab".equals(indentStyle.getValue()) && indentSize == null
-                && RegexpUtils.compareVersions(version, "0.10.0") >= 0) {
-            indentSize = new Option(OptionNames.indent_size.name(), editorConfig);
-            indentSize.setValue("tab");
-            this.addOption(indentSize);
-        }
-
-        // Set tab_width to indent_size if indent_size is specified and
-        // tab_width is unspecified
-        if (indentSize != null && !"tab".equals(indentSize.getValue()) && tabWidth == null) {
-            tabWidth = new Option(OptionNames.tab_width.name(), editorConfig);
-            tabWidth.setValue(indentSize.getValue());
-            this.addOption(tabWidth);
-        }
-
-        // Set indent_size to tab_width if indent_size is "tab"
-        if (indentSize != null && "tab".equals(indentSize.getValue()) && tabWidth != null) {
-            indentSize.setValue(tabWidth.getValue());
-        }
+    public List<Option> getOptions() {
+        return options;
     }
 
-    /**
-     * Return the lowercased option value for certain options.
-     *
-     * @param name
-     * @param value
-     * @return the lowercased option value for certain options.
-     */
-    private static String preprocessOptionValue(OptionNames option, String value) {
-        // According test "lowercase_values1" a "lowercase_values2": test that same
-        // property values are lowercased (v0.9.0 properties)
-        switch (option) {
-        case end_of_line:
-        case indent_style:
-        case indent_size:
-        case insert_final_newline:
-        case trim_trailing_whitespace:
-        case charset:
-            return value.toLowerCase();
-        default:
-            return value;
-        }
+    public boolean match(String filePath) {
+        /* null glob matches all */
+        return glob == null ? true : glob.match(filePath);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        appendTo(s);
+        return s.toString();
     }
 }

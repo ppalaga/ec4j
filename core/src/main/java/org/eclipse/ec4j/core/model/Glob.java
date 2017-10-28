@@ -42,11 +42,13 @@ import java.util.regex.PatternSyntaxException;
 public class Glob {
 
     private static final int MAX_GLOB_LENGTH = 4096;
+    private final PatternSyntaxException error;
     private final List<int[]> ranges;
     private final Pattern regex;
-    private final PatternSyntaxException error;
+    private final String source;
 
     public Glob(String configDirname, String pattern) {
+        this.source = pattern;
         ranges = new ArrayList<int[]>();
         if (pattern.length() > MAX_GLOB_LENGTH) {
             this.regex = null;
@@ -55,10 +57,9 @@ public class Glob {
             pattern = pattern.replace(File.separatorChar, '/');
             pattern = pattern.replaceAll("\\\\#", "#");
             pattern = pattern.replaceAll("\\\\;", ";");
-            int separator = pattern.indexOf("/");
-            if (separator >= 0) {
-                pattern = configDirname.replace(File.separatorChar, '/')
-                        + (separator == 0 ? pattern.substring(1) : pattern);
+            int slashPos = pattern.indexOf('/');
+            if (slashPos >= 0) {
+                pattern = configDirname + "/" + (slashPos == 0 ? pattern.substring(1) : pattern);
             } else {
                 pattern = "**/" + pattern;
             }
@@ -75,6 +76,22 @@ public class Glob {
         }
     }
 
+    public PatternSyntaxException getError() {
+        return error;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public boolean isEmpty() {
+        return source.isEmpty();
+    }
+
+    public boolean isValid() {
+        return getError() == null;
+    }
+
     public boolean match(String filePath) {
         if (!isValid()) {
             return false;
@@ -84,22 +101,21 @@ public class Glob {
             for (int i = 0; i < matcher.groupCount(); i++) {
                 final int[] range = ranges.get(i);
                 final String numberString = matcher.group(i + 1);
-                if (numberString == null || numberString.startsWith("0"))
+                if (numberString == null || numberString.startsWith("0")) {
                     return false;
+                }
                 int number = Integer.parseInt(numberString);
-                if (number < range[0] || number > range[1])
+                if (number < range[0] || number > range[1]) {
                     return false;
+                }
             }
             return true;
         }
         return false;
     }
 
-    public boolean isValid() {
-        return getError() == null;
-    }
-
-    public PatternSyntaxException getError() {
-        return error;
+    @Override
+    public String toString() {
+        return source;
     }
 }

@@ -14,30 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.eclipse.ec4j.core.parser.handlers;
-
-import org.eclipse.ec4j.core.parser.EditorConfigParser;
-import org.eclipse.ec4j.core.parser.Location;
+package org.eclipse.ec4j.core.parser;
 
 /**
  * @author <a href="mailto:angelo.zerr@gmail.com">Angelo Zerr</a>
  */
-public abstract class AbstractEditorConfigHandler<S, O> implements IEditorConfigHandler<S, O> {
+public interface EditorConfigHandler {
 
-    private EditorConfigParser<S, O> parser;
+    void startDocument(ParseContext context);
 
-    @Override
-    public void setParser(EditorConfigParser<S, O> parser) {
-        this.parser = parser;
-    }
+    void endDocument(ParseContext context);
 
-    /**
-     * Returns the current parser location.
-     *
-     * @return the current parser location
-     */
-    protected Location getLocation() {
-        return parser.getLocation();
-    }
+    void startSection(ParseContext context);
+
+    void endSection(ParseContext context);
+
+    void startPattern(ParseContext context);
+    void endPattern(ParseContext context, String pattern);
+
+    void startOption(ParseContext context);
+
+    void endOption(ParseContext context);
+
+    void startOptionName(ParseContext context);
+    void endOptionName(ParseContext context, String name);
+
+    void startOptionValue(ParseContext context);
+    void endOptionValue(ParseContext context, String value);
+
+    void error(ParseException e);
 
 }
