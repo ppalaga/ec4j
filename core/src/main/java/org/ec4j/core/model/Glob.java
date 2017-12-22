@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * An EditorConfig glob. Citing from <a href="http://editorconfig.org/">:
+ * An EditorConfig glob. Citing from <a href="http://editorconfig.org/">http://editorconfig.org/</a>:
  * <p>
  * Special characters recognized in section names for wildcard matching:
  * <ul>
@@ -37,8 +37,7 @@ import java.util.regex.PatternSyntaxException;
  * negative</li>
  * </ul>
  * <p>
- * Methods in this class stating so were copied from <a href=
- * "https://github.com/editorconfig/editorconfig-core-java/blob/e3e090545f44d20f5f228ef1068af4c9d7323a51/src/main/java/org/editorconfig/core/EditorConfig.java">EditorConfig</a>
+ * Methods in this class stating so were copied from <a href="https://github.com/editorconfig/editorconfig-core-java/blob/e3e090545f44d20f5f228ef1068af4c9d7323a51/src/main/java/org/editorconfig/core/EditorConfig.java">EditorConfig</a>
  * by Dennis Ushakov.
  *
  * @author Dennis Ushakov

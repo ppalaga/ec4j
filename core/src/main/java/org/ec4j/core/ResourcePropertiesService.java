@@ -90,7 +90,7 @@ public class ResourcePropertiesService {
         /**
          * Sets the file name to consider as an {@code .editorconfig} file.
          *
-         * @param configFileName
+         * @param configFileName an alternative name {@code .editorconfig} file name
          * @return this {@link Builder}
          */
         public Builder configFileName(String configFileName) {
@@ -104,7 +104,7 @@ public class ResourcePropertiesService {
          * the {@link Property}s with the {@code unset} value will be removed from the {@link ResourceProperties}
          * returned by {@link ResourcePropertiesService#queryProperties(Resource)}.
          *
-         * @param keepUnset
+         * @param keepUnset see above
          * @return this {@link Builder}
          */
         public Builder keepUnset(boolean keepUnset) {
@@ -127,7 +127,7 @@ public class ResourcePropertiesService {
         /**
          * Adds multiple root directories
          *
-         * @param rootDirectories
+         * @param rootDirectories the root directories to add
          * @return this {@link Builder}
          */
         public Builder rootDirectories(Collection<ResourcePath> rootDirectories) {
@@ -138,7 +138,7 @@ public class ResourcePropertiesService {
         /**
          * Adds multiple root directories
          *
-         * @param rootDirectories
+         * @param rootDirectories the root directories to add
          * @return this {@link Builder}
          */
         public Builder rootDirectories(ResourcePath... rootDirectories) {
@@ -151,7 +151,7 @@ public class ResourcePropertiesService {
         /**
          * Adds a single root directory
          *
-         * @param rootDirectory
+         * @param rootDirectory the root directory to add
          * @return this {@link Builder}
          */
         public Builder rootDirectory(ResourcePath rootDirectory) {

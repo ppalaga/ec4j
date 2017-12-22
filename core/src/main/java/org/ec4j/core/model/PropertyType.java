@@ -528,8 +528,8 @@ public class PropertyType<T> {
      * is supposed to perform such transformations. This particular implementation performs no transformation. See also
      * {@link LowerCasingPropertyType}.
      *
-     * @param parsed
-     *            the parsed to normalize
+     * @param value
+     *            the value to normalize
      * @return the normalized parsed or the passed-in {@code parsed} if no transformation is necessary
      */
     public String normalizeIfNeeded(String value) {
@@ -539,8 +539,8 @@ public class PropertyType<T> {
     /**
      * Parses the given {@code parsed} into a {@link PropertyValue}
      *
-     * @param parsed
-     *            the parsed to parse
+     * @param value
+     *            the value to parse
      * @return the {@link PropertyValue}
      */
     public PropertyValue<T> parse(String value) {

@@ -123,7 +123,7 @@ public abstract class AbstractValidatingHandler implements EditorConfigHandler {
      *
      * @param context
      *            the current parse context
-     * @param propValue
+     * @param propValue the {@link PropertyValue} to handle
      */
     protected abstract void propertyValue(ParseContext context, PropertyValue<?> propValue);
 
