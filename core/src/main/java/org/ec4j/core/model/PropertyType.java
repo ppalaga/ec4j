@@ -56,6 +56,8 @@ public class PropertyType<T> {
 
         /**
          * @param endOfLineString
+         *            the actual end of line string such as @{code "\n"} or {@code "\r\n"} to find an
+         *            {@link EndOfLineValue} for
          * @return an {@link EndOfLineValue} that corresponds to the given {@code endOfLineString}
          */
         public static EndOfLineValue ofEndOfLineString(String endOfLineString) {
@@ -291,7 +293,7 @@ public class PropertyType<T> {
         /**
          * A {@link PropertyValueParser} implementation that allows only members of a given {@link Enum} type.
          *
-         * @param <T>
+         * @param <T> the type of the value
          */
         class EnumValueParser<T extends Enum<T>> implements PropertyValueParser<T> {
 
@@ -384,8 +386,8 @@ public class PropertyType<T> {
          *
          * @param name
          *            the name of the parsed property
-         * @param parsed
-         *            the parsed to parse
+         * @param value
+         *            the value to parse
          * @return the {@link PropertyType.PropertyValue}
          */
         PropertyValue<T> parse(String name, String value);
